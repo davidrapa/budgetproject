@@ -1,15 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 
-class Income(db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date)
-    amount = db.Column(db.Float)
-    description = db.Column(db.String(255))
+    username = db.Column(db.String(64), unique=True)
+    password = db.Column(db.String(64))
 
-class Expense(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date)
-    amount = db.Column(db.Float)
-    description = db.Column(db.String(255))
+    def __repr__(self):
+        return '<User {}>'.format(self.username)

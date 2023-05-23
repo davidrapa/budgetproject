@@ -1,38 +1,53 @@
-from __future__ import absolute_import
+from flask import Flask, render_template, request, redirect, url_for
+from flask_login import login_user, logout_user, login_required
+from .models import User
 
-from flask import render_template
-from models import Income, Expense
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///budgetproject.sqlite'
 
-@app.route("/")
-def index():
-    incomes = Income.query.all()
-    expenses = Expense.query.all()
-    return render_template("index.html", incomes=incomes, expenses=expenses)
+db = SQLAlchemy(app)
 
-@app.route("/login")
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template("login.html")
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-@app.route("/logout")
+        user = User.query.filter_by(username=username).first()
+
+        if user is None or not user.check_password(password):
+            return render_template('login.html', error='Invalid username or password')
+
+        login_user(user)
+        return redirect(url_for('home'))
+
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
 def logout():
-    return render_template("logout.html")
+    logout_user()
+    return redirect(url_for('home'))
 
-@app.route("/add_income")
-def add_income():
-    return render_template("add_income.html")
+@app.route('/income')
+@login_required
+def income():
+    return render_template('income.html')
 
-@app.route("/add_expense")
-def add_expense():
-    return render_template("add_expense.html")
+@app.route('/expenses')
+@login_required
+def expenses():
+    return render_template('expenses.html')
 
-@app.route("/view_reports")
-def view_reports():
-    reports = []
-    for income in Income.query.all():
-        reports.append({
-            "date": income.date,
-            "income": income.amount,
-            "expenses": sum([expense.amount for expense in Expense.query.filter_by(date=income.date)]),
-            "balance": income.amount - sum([expense.amount for expense in Expense.query.filter_by(date=income.date)])
-        })
-    return render_template("view_reports.html", reports=reports)
+@app.route('/reports')
+@login_required
+def reports():
+    return render_template('reports.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
